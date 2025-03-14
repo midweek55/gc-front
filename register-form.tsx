@@ -22,19 +22,16 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  // Add error handling for missing Supabase client
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setSuccess("")
 
-    // Validate passwords match
     if (password !== confirmPassword) {
       setError("Passwords do not match")
       return
     }
 
-    // Validate password strength
     if (password.length < 6) {
       setError("Password must be at least 6 characters")
       return
@@ -45,7 +42,6 @@ export default function RegisterForm() {
     try {
       console.log("Registration form submitted with email:", email)
 
-      // Check if Supabase is initialized correctly
       if (!supabase) {
         throw new Error("Supabase client not initialized. Check your environment variables.")
       }
@@ -60,17 +56,14 @@ export default function RegisterForm() {
       if (user) {
         console.log("Registration successful, user:", user.id)
 
-        // Ensure profile exists (this is a fallback in case the trigger fails)
         try {
           await ensureProfileExists(user.id, email, name)
         } catch (profileError) {
           console.error("Failed to create profile, but registration was successful:", profileError)
-          // Continue with registration success even if profile creation fails
         }
 
         setSuccess("Account created successfully! Redirecting to login...")
 
-        // Redirect to login page after a short delay
         setTimeout(() => {
           router.push("/login")
         }, 2000)
@@ -80,7 +73,6 @@ export default function RegisterForm() {
     } catch (err: any) {
       console.error("Registration form error:", err)
 
-      // Handle specific Supabase auth errors with user-friendly messages
       if (err.message.includes("Supabase client not initialized")) {
         setError("Authentication service is not available. Please try again later or contact support.")
       } else if (err.message.includes("already registered")) {
@@ -173,4 +165,3 @@ export default function RegisterForm() {
     </Card>
   )
 }
-

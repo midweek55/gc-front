@@ -22,15 +22,11 @@ export default function LoginForm() {
   const [classification, setClassification] = useState<UserClassification | null>(null)
   const router = useRouter()
 
-  // Initialize localStorage if running in browser
   useEffect(() => {
-    // This ensures localStorage is only accessed in the browser
     if (typeof window !== "undefined") {
-      // No need to do anything, just making sure we're in the browser
     }
   }, [])
 
-  // Add error handling for missing Supabase client
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
@@ -39,7 +35,6 @@ export default function LoginForm() {
     try {
       console.log("Login form submitted with email:", email)
 
-      // Check if Supabase is initialized correctly
       if (!supabase) {
         throw new Error("Supabase client not initialized. Check your environment variables.")
       }
@@ -55,10 +50,8 @@ export default function LoginForm() {
         console.log("Login successful, user:", user.id)
         console.log("User classification:", userClass)
 
-        // Show classification before redirecting
         setClassification(userClass as UserClassification)
 
-        // Redirect to dashboard after a short delay to show classification
         setTimeout(() => {
           router.push("/dashboard")
         }, 2000)
@@ -68,7 +61,6 @@ export default function LoginForm() {
     } catch (err: any) {
       console.error("Login form error:", err)
 
-      // Handle specific Supabase auth errors with user-friendly messages
       if (err.message.includes("Supabase client not initialized")) {
         setError("Authentication service is not available. Please try again later or contact support.")
       } else if (err.message.includes("Invalid login credentials")) {
@@ -168,4 +160,3 @@ export default function LoginForm() {
     </Card>
   )
 }
-

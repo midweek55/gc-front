@@ -26,7 +26,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { AlertCircle } from "lucide-react"
 import type { UserClassification } from "@/types/user"
 
-// Actualizar la interfaz ApiUser para que coincida con la estructura real de datos
 interface ApiUser {
   id: string
   nombre: string
@@ -37,7 +36,6 @@ interface ApiUser {
   clasificacion?: string
 }
 
-// Define the localStorage user data type
 interface LocalUserData {
   lastLogin: string
   previousLogin?: string
@@ -66,11 +64,9 @@ export default function DashboardPage() {
   const apiUrl = "http://localhost:5145/api/User"
   const router = useRouter()
 
-  // Función para calcular el puntaje del usuario
   const calculateUserScore = (user: ApiUser): number => {
     let score = 0
 
-    // 1. Calcular puntos por longitud del nombre completo
     const fullName = `${user.nombre} ${user.apellidos}`.trim()
     const nameLength = fullName.length
 
@@ -79,9 +75,7 @@ export default function DashboardPage() {
     } else if (nameLength >= 5) {
       score += 10
     }
-    // Si es menor a 5, no suma puntos
 
-    // 2. Calcular puntos por dominio de correo
     const email = user.correoElectronico.toLowerCase()
 
     if (email.endsWith("@gmail.com")) {
@@ -95,11 +89,9 @@ export default function DashboardPage() {
     return score
   }
 
-  // Fetch Supabase user data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Check if Supabase is initialized correctly
         if (!supabase) {
           console.error("Supabase client not initialized. Check your environment variables.")
           setLoading(false)
@@ -118,7 +110,6 @@ export default function DashboardPage() {
 
         setUser(session.user)
 
-        // Get user data from localStorage
         if (typeof window !== "undefined") {
           const localData = getUserData(session.user.id)
           if (localData) {
@@ -134,7 +125,6 @@ export default function DashboardPage() {
 
     fetchUserData()
 
-    // Set up auth state change listener
     let subscription: { unsubscribe: () => void } = { unsubscribe: () => {} }
 
     if (supabase) {
@@ -142,7 +132,6 @@ export default function DashboardPage() {
         if (session) {
           setUser(session.user)
 
-          // Get user data from localStorage
           if (typeof window !== "undefined") {
             const localData = getUserData(session.user.id)
             if (localData) {
@@ -164,7 +153,6 @@ export default function DashboardPage() {
     }
   }, [router])
 
-  // Fetch API users
   const fetchApiUsers = async () => {
     setApiLoading(true)
     setApiError(null)
@@ -173,9 +161,8 @@ export default function DashboardPage() {
       console.log(`Attempting to fetch from API URL: ${apiUrl}`)
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-      // First try with standard fetch
       let response
       try {
         response = await fetch(apiUrl, {
@@ -184,24 +171,22 @@ export default function DashboardPage() {
             Accept: "application/json",
             "Cache-Control": "no-cache",
           },
-          mode: "cors", // Try with CORS mode first
+          mode: "cors",
         })
       } catch (initialError) {
         console.log("Initial fetch failed, trying with no-cors mode:", initialError)
-        // If that fails, try with no-cors as fallback
         response = await fetch(apiUrl, {
           signal: controller.signal,
           headers: {
             Accept: "application/json",
             "Cache-Control": "no-cache",
           },
-          mode: "no-cors", // Fallback to no-cors
+          mode: "no-cors",
         })
       }
 
       clearTimeout(timeoutId)
 
-      // Log response details for debugging
       console.log(`API Response status: ${response.status} ${response.statusText}`)
       console.log(`API Response type: ${response.type}`)
       const contentType = response.headers.get("content-type")
@@ -211,17 +196,13 @@ export default function DashboardPage() {
         throw new Error(`API error: ${response.status} ${response.statusText}`)
       }
 
-      // Check content type
       if (!contentType || !contentType.includes("application/json")) {
-        // Try to get the response text for debugging
         const responseText = await response.text()
         console.error("API returned non-JSON response:", responseText.substring(0, 200) + "...")
 
         throw new Error(`API did not return JSON. Received: ${contentType || "unknown"}`)
       }
 
-      // If we got here, we have a valid JSON response
-      // Reset the response since we consumed it with text()
       const data = await fetch(apiUrl, {
         headers: { Accept: "application/json" },
       }).then((res) => res.json())
@@ -230,7 +211,6 @@ export default function DashboardPage() {
     } catch (error: any) {
       console.error("Error fetching API users:", error)
 
-      // Set specific error message based on error type
       if (error.name === "AbortError") {
         setApiError("API request timed out. Please check your connection and try again.")
       } else if (error.message.includes("<!DOCTYPE") || error.message.includes("text/html")) {
@@ -241,27 +221,23 @@ export default function DashboardPage() {
         setApiError(error.message || "Failed to fetch users. Please try again later.")
       }
 
-      // Clear users when API fails
       setApiUsers([])
     } finally {
       setApiLoading(false)
     }
   }
 
-  // Load API users on initial render
   useEffect(() => {
     if (!loading && user) {
       fetchApiUsers()
     }
   }, [loading, user])
 
-  // Handle form input changes
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
-  // Create a new user
   const handleCreateUser = async () => {
     setApiLoading(true)
     setApiError(null)
@@ -283,11 +259,9 @@ export default function DashboardPage() {
         throw new Error(`API error: ${response.status}`)
       }
 
-      // Refresh the user list
       await fetchApiUsers()
       setIsCreateDialogOpen(false)
 
-      // Reset form data
       setFormData({
         nombre: "",
         apellidos: "",
@@ -302,7 +276,6 @@ export default function DashboardPage() {
     }
   }
 
-  // Actualizar la referencia a _id en la función handleUpdateUser
   const handleUpdateUser = async () => {
     if (!selectedUser) return
 
@@ -326,7 +299,6 @@ export default function DashboardPage() {
         throw new Error(`API error: ${response.status}`)
       }
 
-      // Refresh the user list
       await fetchApiUsers()
       setIsEditDialogOpen(false)
     } catch (error: any) {
@@ -337,7 +309,6 @@ export default function DashboardPage() {
     }
   }
 
-  // Actualizar las referencias a _id por id en la función handleDeleteUser
   const handleDeleteUser = async (id: string) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este usuario?")) return
 
@@ -356,7 +327,6 @@ export default function DashboardPage() {
         throw new Error(`API error: ${response.status}`)
       }
 
-      // Refresh the user list
       await fetchApiUsers()
     } catch (error: any) {
       console.error("Error deleting user:", error)
@@ -366,7 +336,6 @@ export default function DashboardPage() {
     }
   }
 
-  // Open edit dialog with user data
   const openEditDialog = (user: ApiUser) => {
     setSelectedUser(user)
     setFormData({
@@ -559,59 +528,63 @@ export default function DashboardPage() {
                 </div>
               ) : apiUsers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  {apiError ? "No se pudieron cargar los usuarios" : "No hay usuarios registrados"}
+                  {apiError ? "No se pudieron cargar los usuarios." : "No hay usuarios registrados."}
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full border-collapse text-base">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-4 px-6">Nombre</th>
-                        <th className="text-left py-4 px-6">Apellidos</th>
-                        <th className="text-left py-4 px-6">Cédula</th>
-                        <th className="text-left py-4 px-6">Correo</th>
-                        <th className="text-center py-4 px-6">Puntaje</th>
-                        <th className="text-right py-4 px-6">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {apiUsers.map((apiUser) => {
-                        const score = calculateUserScore(apiUser)
-                        return (
-                          <tr key={apiUser.id} className="border-b hover:bg-muted/50">
-                            <td className="py-4 px-6 font-medium">{apiUser.nombre}</td>
-                            <td className="py-4 px-6">{apiUser.apellidos}</td>
-                            <td className="py-4 px-6">{apiUser.cedula}</td>
-                            <td className="py-4 px-6">{apiUser.correoElectronico}</td>
-                            <td className="py-4 px-6 text-center">
-                              <span
-                                className={`inline-block rounded-full px-3 py-1 text-sm font-semibold 
-                                ${
-                                  score >= 50
-                                    ? "bg-green-100 text-green-800"
-                                    : score >= 30
-                                      ? "bg-blue-100 text-blue-800"
-                                      : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {score} pts
-                              </span>
-                            </td>
-                            <td className="py-4 px-6 text-right">
-                              <div className="flex justify-end space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => openEditDialog(apiUser)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => handleDeleteUser(apiUser.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                <div className="space-y-4">
+                  {apiUsers.map((apiUser) => {
+                    const score = calculateUserScore(apiUser)
+                    let classification: UserClassification = "Olvidado"
+
+                    if (score >= 60) {
+                      classification = "Hechicero"
+                    } else if (score >= 40) {
+                      classification = "Luchador"
+                    } else if (score >= 30) {
+                      classification = "Explorador"
+                    }
+
+                    return (
+                      <div key={apiUser.id} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-medium">
+                                {apiUser.nombre} {apiUser.apellidos}
+                              </h3>
+                              <UserClassificationBadge classification={classification} />
+                            </div>
+                            <p className="text-sm text-muted-foreground">{apiUser.correoElectronico}</p>
+                            <p className="text-xs text-muted-foreground">Cédula: {apiUser.cedula}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Último acceso:{" "}
+                              {apiUser.fechaUltimoAcceso
+                                ? new Date(apiUser.fechaUltimoAcceso).toLocaleString()
+                                : "Nunca"}
+                            </p>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openEditDialog(apiUser)}
+                              title="Editar usuario"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleDeleteUser(apiUser.id)}
+                              title="Eliminar usuario"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
@@ -619,18 +592,23 @@ export default function DashboardPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Editar Usuario</DialogTitle>
-            <DialogDescription>Actualiza los datos del usuario.</DialogDescription>
+            <DialogDescription>Modifica los datos del usuario.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="edit-nombre">Nombre</Label>
-                <Input id="edit-nombre" name="nombre" value={formData.nombre} onChange={handleInputChange} required />
+                <Input
+                  id="edit-nombre"
+                  name="nombre"
+                  value={formData.nombre}
+                  onChange={handleInputChange}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="edit-apellidos">Apellidos</Label>
@@ -664,7 +642,7 @@ export default function DashboardPage() {
               Cancelar
             </Button>
             <Button onClick={handleUpdateUser} disabled={apiLoading}>
-              {apiLoading ? "Actualizando..." : "Actualizar Usuario"}
+              {apiLoading ? "Guardando..." : "Guardar Cambios"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -672,4 +650,3 @@ export default function DashboardPage() {
     </div>
   )
 }
-
